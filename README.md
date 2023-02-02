@@ -13,7 +13,7 @@ This repo contains an Ansible playbook and associated configurations to automati
   * [Usage](#usage)
   * [Repos](#repos)
   * [Web server symlinks](#symlinks)
-  * [Cronjob](#usage)
+  * [Cronjob](#cronjob)
 
 <a name="requirements"></a>
 ## Requirements
