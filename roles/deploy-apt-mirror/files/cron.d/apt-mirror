@@ -1,0 +1,6 @@
+#
+# This cronjob runs the /root/bin/update-apt-mirror script every day at
+# 1 AM in order to update the local apt mirrors.
+#
+
+0 1 * * * root /root/bin/update-apt-mirror

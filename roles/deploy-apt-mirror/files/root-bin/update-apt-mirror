@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# This script is called from the cronjob /etc/cron.d/apt-mirror and runs
+# every day at 1 AM to update the local apt repo mirrors.
+#
+
+# Echo the date into the log
+echo "`date +%m-%d-%Y_%H:%M:%S`" >> /var/log/apt-mirror.log
+
+# Echo message into the log
+echo "Beginning daily apt mirror process" >> /var/log/apt-mirror.log
+
+# Run apt-mirror update command as the apt-mirror user and send the output
+# to /var/log/apt-mirror.log
+runuser -l apt-mirror -c "/usr/bin/apt-mirror" >> /var/log/apt-mirror.log

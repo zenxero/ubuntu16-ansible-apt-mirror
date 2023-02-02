@@ -1,0 +1,12 @@
+---
+
+#
+# deploy-apt-mirror.yml
+#
+# This playbook configure the target system to be an Ubuntu 16.04 apt repo mirror.
+#
+
+- hosts: apt-mirror
+  remote_user: root
+  roles:
+    - deploy-apt-mirror

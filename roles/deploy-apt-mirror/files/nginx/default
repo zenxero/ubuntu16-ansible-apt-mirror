@@ -1,0 +1,15 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    access_log /var/log/nginx/mirror.access.log;
+    error_log  /var/log/nginx/mirror.error.log;
+
+    server_name_in_redirect off;
+
+    location / {
+        alias /var/www/;
+        autoindex on;
+    }
+}

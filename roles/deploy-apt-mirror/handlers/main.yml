@@ -1,0 +1,13 @@
+---
+
+#
+# apt repo service handlers
+#
+# Restart only when changes are made.
+#
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted
+    enabled: yes

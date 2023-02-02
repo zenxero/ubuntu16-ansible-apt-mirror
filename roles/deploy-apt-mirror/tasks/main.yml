@@ -1,0 +1,187 @@
+---
+
+#
+# deploy-apt-mirror
+#
+# This task configures an Ubuntu 16.04 system to be an apt package repo mirror.
+#
+
+# Make sure the distro is running Ubuntu 16.04
+- name: Check distro for Ubuntu 16.04 compatibility
+  fail:
+    msg="You're not running a supported distro for the apt mirror (Ubuntu 16.04)"
+  when: (ansible_distribution != "Ubuntu" and ansible_distribution_version != "16.04")
+
+# All tasks are grouped in a block/when statement so that this only runs against an Ubuntu 16.04 system.
+- block:
+
+#############################
+# Pre-Reqs
+#############################
+
+  - name: Ensure /root/bin directory exists
+    file:
+      path: /root/bin
+      state: directory
+      owner: root
+      group: root
+      mode: 0700
+
+  - name: Ensure /srv directory exists
+    file:
+      path: /srv
+      state: directory
+      mode: 0755
+
+  - name: Set default package repos for system
+    copy:
+      src: files/apt/sources.list
+      dest: /etc/apt/sources.list
+      owner: root
+      group: root
+      mode: 0644
+
+#############################
+# Package installs
+#############################
+
+  - name: Install handy packages
+    apt:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - apt-file
+      - curl
+      - git
+      - htop
+      - locate
+      - nano
+      - ncdu
+      - python-apt
+      - rsync
+      - screen
+      - tmux
+      - tree
+      - vim
+      - wget
+
+  - name: Install apt repo packages
+    apt:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - apt-mirror
+      - nginx
+
+#############################
+# Apt mirror configuration
+#############################
+
+  - name: Ensure /srv/repo_mirror directory exists
+    file:
+      path: /srv/repo_mirror
+      state: directory
+      mode: 0755
+      owner: apt-mirror
+      group: apt-mirror
+
+  - name: Copy apt mirror config file
+    copy:
+      src: files/apt/mirror.list
+      dest: /etc/apt/mirror.list
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Copy apt-mirror root script
+    copy:
+      src: files/root-bin/update-apt-mirror
+      dest: /root/bin/update-apt-mirror
+      owner: root
+      group: root
+      mode: 0700
+
+  - name: Copy apt-mirror cronjob
+    copy:
+      src: files/cron.d/apt-mirror
+      dest: /etc/cron.d/apt-mirror
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Remove default /var/www/html directory
+    file:
+      path: /var/www/html
+      state: absent
+
+  - name: Create ubuntu symlink to /srv/repo_mirror
+    file:
+      src: /srv/repo_mirror/mirror/archive.ubuntu.com/ubuntu
+      dest: /var/www/ubuntu
+      owner: root
+      group: root
+      state: link
+      force: yes
+
+  - name: Create cuda-repo symlink to /srv/repo_mirror
+    file:
+      src: /srv/repo_mirror/mirror/developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64
+      dest: /var/www/cuda-repo
+      owner: root
+      group: root
+      state: link
+      force: yes
+
+  - name: Create git-core symlink to /srv/repo_mirror
+    file:
+      src: /srv/repo_mirror/mirror/ppa.launchpad.net/git-core/ppa/ubuntu
+      dest: /var/www/git-core
+      owner: root
+      group: root
+      state: link
+      force: yes
+
+  - name: Create google-chrome symlink to /srv/repo_mirror
+    file:
+      src: /srv/repo_mirror/mirror/dl.google.com/linux/chrome/deb
+      dest: /var/www/google-chrome
+      owner: root
+      group: root
+      state: link
+      force: yes
+
+#############################
+# nginx Setup
+#############################
+
+  - name: Copy nginx config file
+    copy:
+      src: files/nginx/default
+      dest: /etc/nginx/sites-available/default
+      owner: root
+      group: root
+      mode: 0644
+    notify: restart nginx
+
+#############################
+# Finish up
+#############################
+
+  - name: Ensure that nginx is running and enabled
+    service:
+      name: nginx
+      state: started
+      enabled: yes
+
+#############################
+# Start initial apt-mirror
+# (Fire and forget task)
+# (This takes quite a while)
+#############################
+
+  - name: Start initial apt-mirror sync
+    command: /root/bin/update-apt-mirror
+    async: 10
+    poll: 0
+
+  when: (ansible_distribution == "Ubuntu" and ansible_distribution_version == "16.04")
